@@ -1,0 +1,16 @@
+pandas
+numpy
+openpyxl
+catboost
+xgboost
+scikit-learn
+shap
+prophet
+plotly
+seaborn
+scipy
+fastapi
+uvicorn
+pydantic
+python-dotenv
+jupyter

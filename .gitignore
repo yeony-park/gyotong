@@ -1,0 +1,22 @@
+catboost_info/
+__pycache__/
+.ipynb_checkpoints/
+.env
+AGENTS.md
+WORKLOG.md
+docs/
+
+# 모델 바이너리
+models/
+
+# 생성된 EDA 출력물
+data/processed/eda_results/
+
+# 중복/캐시 파일
+data/processed/ktx_long_with_holiday.csv
+data/processed/holidays_cache.csv
+
+# 대시보드
+dashboard/node_modules/
+dashboard/.next/
+dashboard/.env.local
