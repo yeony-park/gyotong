@@ -23,7 +23,9 @@ from pathlib import Path
 DATA_DIR  = Path("data/processed")
 MODEL_DIR = Path("models")
 EDA_DIR   = DATA_DIR / "eda_results"
+IMG_DIR   = Path("outputs/img")
 MODEL_DIR.mkdir(exist_ok=True)
+IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 # feature 목록 (공휴일 변수 포함 버전)
 # 공휴일 변수가 없으면 아래 BASE_FEATURES만 사용
@@ -242,7 +244,7 @@ def shap_per_route(per_route_results: dict) -> None:
         height=700,
     )
     fig.update_yaxes(matches=None)
-    fig.write_image(str(EDA_DIR / "shap_per_route.png"))
+    fig.write_image(str(IMG_DIR / "shap_per_route.png"))
     print("✅ shap_per_route.png 저장")
 
 
@@ -280,7 +282,7 @@ def main():
         print(f"  models/catboost_{노선}.cbm")
     print(f"  data/processed/eda_results/model_comparison_per_route.csv")
     print(f"  data/processed/eda_results/shap_per_route.csv")
-    print(f"  data/processed/eda_results/shap_per_route.png")
+    print(f"  outputs/img/shap_per_route.png")
 
     # 4. 최종 요약
     print("\n=== 최종 요약 ===")

@@ -27,6 +27,8 @@ BASE_URL  = "http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/get
 DATA_DIR  = Path("data/processed")
 EDA_DIR   = DATA_DIR / "eda_results"
 EDA_DIR.mkdir(parents=True, exist_ok=True)
+IMG_DIR   = Path("outputs/img")
+IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 # 명절 이름 목록 (설날·추석 연휴)
 FESTIVAL_NAMES = {"설날", "추석", "대체공휴일"}
@@ -262,7 +264,7 @@ def eda_holiday(df: pd.DataFrame) -> None:
     )
     fig.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
     fig.update_layout(height=600)
-    fig.write_image(str(EDA_DIR / "boxplot_holiday_festival.png"))
+    fig.write_image(str(IMG_DIR / "boxplot_holiday_festival.png"))
     print("✅ boxplot_holiday_festival.png 저장")
 
     # ── 4-4. 명절 전/중/후 공실률 패턴 Line chart ──
@@ -285,7 +287,7 @@ def eda_holiday(df: pd.DataFrame) -> None:
         labels={"공실률": "평균 공실률 (%)"},
     )
     fig2.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
-    fig2.write_image(str(EDA_DIR / "barplot_holiday_timing.png"))
+    fig2.write_image(str(IMG_DIR / "barplot_holiday_timing.png"))
     print("✅ barplot_holiday_timing.png 저장")
 
     # ── 4-5. 황금연휴 효과 ──
@@ -312,7 +314,7 @@ def eda_holiday(df: pd.DataFrame) -> None:
         labels={"공휴일수": "공휴일 수 (일/월)", "공실률": "평균 공실률 (%)"},
     )
     fig3.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
-    fig3.write_image(str(EDA_DIR / "line_holiday_count.png"))
+    fig3.write_image(str(IMG_DIR / "line_holiday_count.png"))
     print("✅ line_holiday_count.png 저장")
 
 
@@ -387,9 +389,9 @@ def main():
     print(f"  data/processed/holidays_raw.csv")
     print(f"  data/processed/ktx_long.csv (공휴일 컬럼 추가)")
     print(f"  data/processed/ktx_model_input.csv (feature 추가)")
-    print(f"  data/processed/eda_results/boxplot_holiday_festival.png")
-    print(f"  data/processed/eda_results/barplot_holiday_timing.png")
-    print(f"  data/processed/eda_results/line_holiday_count.png")
+    print(f"  outputs/img/boxplot_holiday_festival.png")
+    print(f"  outputs/img/barplot_holiday_timing.png")
+    print(f"  outputs/img/line_holiday_count.png")
     print(f"  data/processed/eda_results/holiday_mannwhitney.csv")
 
 

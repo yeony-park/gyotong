@@ -22,7 +22,7 @@ from sklearn.model_selection import TimeSeriesSplit
 
 DATA_PATH = Path("data/processed/ktx_model_input.csv")
 MODEL_PATH = Path("models/catboost_model.cbm")
-OUTPUT_DIR = Path("data/processed/eda_results")
+OUTPUT_DIR = Path("outputs/img")
 
 FEATURE_COLS = [
     "월",
@@ -184,8 +184,8 @@ def main() -> None:
     print(f"saved model: {MODEL_PATH}")
 
     evaluate(model, df)
-    print(f"saved plot: {OUTPUT_DIR / 'pred_vs_actual.png'}")
-    print(f"saved plot: {OUTPUT_DIR / 'shap_summary.png'}")
+    print(f"saved plot: outputs/img/pred_vs_actual.png")
+    print(f"saved plot: outputs/img/shap_summary.png")
     print("\nfold metrics")
     print(metrics_df.round(4).to_string(index=False))
 
