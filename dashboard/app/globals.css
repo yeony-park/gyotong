@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0f172a;
+  --line: #dbe5ef;
+  --soft: #f4f8fb;
+  --teal: #0f766e;
+  --sky: #0ea5e9;
+  --amber: #f59e0b;
+  --red: #dc2626;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #dfd8cf;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 50% -8%, rgba(255, 255, 255, 0.68), transparent 34rem),
+    linear-gradient(180deg, #e9e1d8 0%, #d5cdc5 100%);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+select {
+  font: inherit;
+}
+
+.dashboard-shell {
+  width: min(1420px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 26px 0 32px;
+}
+
+.glass-panel {
+  min-height: 760px;
+  overflow: hidden;
+  border: 10px solid #4b4741;
+  background: #f7f8f8;
+  box-shadow:
+    0 28px 70px rgba(33, 29, 25, 0.28),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+
+.dash-card {
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.045);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #555b62;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.panel-title::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #72ddb0;
+  box-shadow: 0 0 10px rgba(114, 221, 176, 0.68);
+  content: "";
+}
+
+.bar-rail {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(90deg, #ebeeee, #ffffff);
+}
+
+.bar-fill {
+  background: linear-gradient(90deg, var(--bar-color), color-mix(in srgb, var(--bar-color), white 58%));
+  box-shadow: none;
+}
+
+.gauge-ring {
+  background: conic-gradient(from 225deg, var(--accent) 0deg, var(--accent-2) var(--gauge-angle), #cbd5e1 var(--gauge-angle), #cbd5e1 270deg, transparent 270deg);
+}
+
+.gauge-ring::after {
+  position: absolute;
+  inset: 12px;
+  border-radius: 999px;
+  background: #f8fafc;
+  content: "";
+}
+
+.screen-statusbar {
+  height: 72px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(14px);
+}
+
+.screen-content {
+  min-height: 584px;
+  padding: 20px;
+}
+
+.screen-tabbar {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+}
+
+.nav-icon-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 999px;
+  color: #5d636b;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.nav-icon-button:hover {
+  background: #eef2f3;
+  color: #1f2937;
+}
+
+.thin-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.thin-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cbd5e1;
+}

@@ -1,6 +1,6 @@
 """
 KTX 공실률 분석 - 데이터 전처리 스크립트
-입력: 4_고속철도_여객_수송동향.xlsx
+입력: data/raw/high_speed_rail_passenger_trends.xlsx
 출력: ktx_wide.csv, ktx_long.csv
 """
 
@@ -9,9 +9,12 @@ import numpy as np
 from pathlib import Path
 
 # ── 경로 설정 ──────────────────────────────────────────
-INPUT_PATH = "4_고속철도_여객_수송동향.xlsx"
-OUTPUT_WIDE = "ktx_wide.csv"
-OUTPUT_LONG = "ktx_long.csv"
+DATA_DIR = Path("data")
+RAW_DIR = DATA_DIR / "raw"
+PROCESSED_DIR = DATA_DIR / "processed"
+INPUT_PATH = RAW_DIR / "high_speed_rail_passenger_trends.xlsx"
+OUTPUT_WIDE = PROCESSED_DIR / "ktx_wide.csv"
+OUTPUT_LONG = PROCESSED_DIR / "ktx_long.csv"
 
 
 def load_raw(path: str) -> pd.DataFrame:
@@ -133,10 +136,16 @@ def to_long(df: pd.DataFrame) -> pd.DataFrame:
                 "KTX전체공실률":  row.get("KTX_공실률", np.nan),
             })
     df_long = pd.DataFrame(rows)
+    df_long["개통전"] = (
+        (df_long["여객수_천명"].fillna(0) == 0)
+        & (df_long["KTX이용률"].fillna(0) == 0)
+    ).astype(int)
     return df_long.reset_index(drop=True)
 
 
 def main():
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+
     print("1. 원본 데이터 로드...")
     df_wide = load_raw(INPUT_PATH)
 

@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A파트 KTX 노선·역별 집계</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --rail-bg: #f6f8fb;
+        --panel: #ffffff;
+        --panel-2: #eef3f8;
+        --track: #dbe5ef;
+        --text-soft: #64748b;
+        --signal-green: #16a34a;
+        --signal-amber: #f59e0b;
+        --signal-red: #dc2626;
+        --electric: #0ea5e9;
+        --ink: #0f172a;
+      }
+
+      body {
+        background:
+          linear-gradient(rgba(15, 23, 42, 0.028) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(15, 23, 42, 0.028) 1px, transparent 1px),
+          radial-gradient(circle at 18% 0%, rgba(14, 165, 233, 0.16), transparent 28rem),
+          radial-gradient(circle at 82% 10%, rgba(22, 163, 74, 0.12), transparent 24rem),
+          linear-gradient(180deg, #ffffff 0%, #f7fafc 48%, #eef4f9 100%);
+        background-size: 42px 42px, 42px 42px, auto, auto, auto;
+        color: var(--ink);
+        min-height: 100vh;
+      }
+
+      .cab-panel {
+        background: var(--panel);
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.1);
+      }
+
+      .cab-card {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 254, 0.98)),
+          repeating-linear-gradient(90deg, transparent, transparent 14px, rgba(15, 23, 42, 0.025) 15px);
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      }
+
+      .signal-dot {
+        height: 0.75rem;
+        width: 0.75rem;
+        border-radius: 999px;
+        box-shadow: 0 0 16px currentColor;
+      }
+
+      .track-line {
+        position: relative;
+        height: 10px;
+        border-top: 2px solid rgba(100, 116, 139, 0.34);
+        border-bottom: 2px solid rgba(100, 116, 139, 0.34);
+      }
+
+      .track-line::before {
+        background: repeating-linear-gradient(90deg, rgba(100, 116, 139, 0.36) 0 2px, transparent 2px 18px);
+        content: "";
+        inset: -8px 0;
+        position: absolute;
+      }
+
+      .bar-rail {
+        background: linear-gradient(90deg, #e5edf5, #f8fafc);
+        border: 1px solid rgba(148, 163, 184, 0.38);
+      }
+
+      .bar-fill {
+        background: linear-gradient(90deg, var(--bar-color), color-mix(in srgb, var(--bar-color), white 58%));
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+      }
+
+      .gauge {
+        background:
+          radial-gradient(circle at 50% 115%, rgba(14, 165, 233, 0.14), transparent 48%),
+          linear-gradient(180deg, #ffffff, #eef5fb);
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        box-shadow: inset 0 -10px 22px rgba(14, 165, 233, 0.08);
+      }
+
+      .gauge-arc {
+        background: conic-gradient(from 225deg, var(--signal-green) 0deg, var(--electric) var(--gauge-angle), #cbd5e1 var(--gauge-angle), #cbd5e1 270deg, transparent 270deg);
+        border-radius: 999px;
+        height: 96px;
+        position: relative;
+        width: 96px;
+      }
+
+      .gauge-arc::after {
+        background: #f8fafc;
+        border-radius: 999px;
+        content: "";
+        inset: 12px;
+        position: absolute;
+      }
+
+      .cab-table tbody tr:hover {
+        background: rgba(14, 165, 233, 0.08);
+      }
+
+      .control-frame {
+        background:
+          linear-gradient(rgba(15, 23, 42, 0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(15, 23, 42, 0.025) 1px, transparent 1px),
+          radial-gradient(circle at 50% 16%, rgba(14, 165, 233, 0.12), transparent 34rem),
+          rgba(255, 255, 255, 0.88);
+        background-size: 42px 42px, 42px 42px, auto, auto;
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12), inset 0 0 80px rgba(14, 165, 233, 0.06);
+      }
+
+      .control-topbar {
+        background: linear-gradient(90deg, #ffffff, #eef7ff);
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        box-shadow: inset 0 -1px 0 rgba(14, 165, 233, 0.18);
+      }
+
+      .tab-button {
+        border: 1px solid rgba(148, 163, 184, 0.34);
+        background: #ffffff;
+        color: #475569;
+      }
+
+      .tab-button.active {
+        background: linear-gradient(90deg, #0f172a, #0f766e);
+        border-color: rgba(15, 118, 110, 0.42);
+        color: #ffffff;
+        box-shadow: 0 10px 22px rgba(15, 118, 110, 0.22);
+      }
+
+      .panel-title {
+        align-items: center;
+        color: #0f766e;
+        display: flex;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 0.78rem;
+        font-weight: 800;
+        gap: 0.5rem;
+        letter-spacing: 0.12em;
+        margin-bottom: 0.8rem;
+        text-transform: uppercase;
+      }
+
+      .panel-title::before {
+        background: #0ea5e9;
+        border-radius: 999px;
+        box-shadow: 0 0 12px rgba(14, 165, 233, 0.55);
+        content: "";
+        height: 0.5rem;
+        width: 0.5rem;
+      }
+
+      .map-console {
+        background:
+          linear-gradient(rgba(100, 116, 139, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(100, 116, 139, 0.06) 1px, transparent 1px),
+          radial-gradient(circle at 50% 45%, rgba(14, 165, 233, 0.12), transparent 24rem),
+          #ffffff;
+        background-size: 36px 36px, 36px 36px, auto, auto;
+      }
+
+      .map-console iframe {
+        filter: saturate(0.98) contrast(1.02);
+      }
+
+      .status-chip {
+        background: linear-gradient(180deg, #f8fafc, #e9f3fb);
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        color: #0f172a;
+      }
+    </style>
+  </head>
+  <body class="text-slate-900">
+    <main class="mx-auto max-w-[1500px] px-4 py-4">
+      <section class="control-frame rounded-xl p-3">
+        <header class="control-topbar mb-3 grid gap-3 rounded-lg px-4 py-3 md:grid-cols-[220px_1fr_340px] md:items-center">
+          <div class="flex items-center gap-3">
+            <div class="status-chip grid h-10 w-10 place-items-center rounded text-xs font-black tracking-tight">KTX</div>
+            <div class="font-mono text-xs leading-tight text-slate-600">
+              <div>2026.05.11</div>
+              <div class="text-xl font-black text-slate-950">KTX-A</div>
+            </div>
+          </div>
+          <div class="text-center">
+            <p class="text-xs font-bold tracking-[0.22em] text-teal-700">RAIL DEMAND CONTROL SYSTEM</p>
+            <h1 class="text-2xl font-black tracking-tight text-slate-950 md:text-3xl">KTX 노선·역별 수요 관제 대시보드</h1>
+          </div>
+          <div class="flex flex-wrap justify-end gap-3">
+            <label class="text-xs font-semibold text-slate-600">
+              <span class="mb-1 block">노선</span>
+              <select id="lineSelect" class="min-w-40 rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm"></select>
+            </label>
+            <label class="text-xs font-semibold text-slate-600">
+              <span class="mb-1 block">Top N</span>
+              <select id="topSelect" class="rounded border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm">
+                <option>5</option>
+                <option>10</option>
+                <option selected>15</option>
+                <option>20</option>
+                <option>30</option>
+              </select>
+            </label>
+          </div>
+        </header>
+
+        <nav class="mb-3 grid grid-cols-2 gap-2">
+          <button id="tabBtnA" class="tab-button active rounded-lg px-4 py-3 text-sm font-black tracking-[0.12em]">A · 노선/역별 집계</button>
+          <button id="tabBtnD" class="tab-button rounded-lg px-4 py-3 text-sm font-black tracking-[0.12em]">D · 외부요인/SHAP 분석</button>
+        </nav>
+
+        <section id="tabA">
+        <section class="grid gap-3 xl:grid-cols-[300px_1fr_300px]">
+          <aside class="space-y-3">
+            <article class="cab-card rounded-lg p-4">
+              <h2 class="panel-title">운행 수요 현황</h2>
+              <div id="metrics" class="grid gap-3"></div>
+            </article>
+            <article class="cab-card rounded-lg p-4">
+              <h2 class="panel-title">노선별 등록 역 수</h2>
+              <div id="routeCountChart" class="space-y-2"></div>
+            </article>
+          </aside>
+
+          <section class="space-y-3">
+            <article class="cab-card map-console rounded-lg p-4">
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <h2 class="panel-title mb-0">KTX 역별 지도 상황</h2>
+                <a class="text-sm font-semibold text-sky-700 underline" href="/data/processed/ktx_station_map.html" target="_blank">새 창</a>
+              </div>
+              <iframe
+                class="h-[610px] w-full rounded border border-slate-300 bg-white"
+                src="/data/processed/ktx_station_map.html"
+                title="KTX station folium map"
+              ></iframe>
+            </article>
+            <article class="cab-card rounded-lg p-4">
+              <h2 class="panel-title">승차 인원 상위 역</h2>
+              <div id="topBoardingChart" class="space-y-2"></div>
+            </article>
+          </section>
+
+          <aside class="space-y-3">
+            <article class="cab-card rounded-lg p-4">
+              <h2 class="panel-title">노선 요약</h2>
+              <div id="routeSummaryChart" class="space-y-2"></div>
+            </article>
+            <article class="cab-card rounded-lg p-4">
+              <h2 class="panel-title">승차·하차 비교</h2>
+              <div id="boardingAlightingChart" class="space-y-2"></div>
+            </article>
+            <article class="cab-card rounded-lg p-4">
+              <h2 id="routeOrderTitle" class="panel-title">정차역 순서별 승차 인원</h2>
+              <div id="routeOrderChart" class="space-y-2"></div>
+            </article>
+          </aside>
+        </section>
+
+        <section class="cab-card mt-3 rounded-lg p-4">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <h2 class="panel-title mb-0">선택 데이터</h2>
+            <button id="downloadBtn" class="rounded border border-teal-700 bg-teal-700 px-3 py-2 text-sm font-semibold text-white shadow-sm">CSV 다운로드</button>
+          </div>
+          <div class="max-h-[360px] overflow-auto">
+            <table class="cab-table min-w-full text-left text-sm">
+              <thead id="tableHead" class="sticky top-0 bg-slate-100 text-slate-600"></thead>
+              <tbody id="tableBody" class="divide-y divide-slate-200 text-slate-700"></tbody>
+            </table>
+          </div>
+        </section>
+        </section>
+
+        <section id="tabD" class="hidden space-y-3">
+          <section class="grid gap-3 lg:grid-cols-[1fr_320px]">
+            <article class="cab-card rounded-lg p-4">
+              <h2 class="panel-title">SHAP feature impact</h2>
+              <div id="shapChart" class="space-y-2"></div>
+            </article>
+            <article class="cab-card rounded-lg p-4">
+              <h2 class="panel-title">모델 상태</h2>
+              <div id="modelMetrics" class="space-y-3"></div>
+            </article>
+          </section>
+          <section class="grid gap-3 lg:grid-cols-2">
+            <article class="cab-card rounded-lg p-4">
+              <h2 class="panel-title">Spearman 상관관계</h2>
+              <div id="corrChart" class="space-y-2"></div>
+            </article>
+            <article class="cab-card rounded-lg p-4">
+              <h2 class="panel-title">분석 feature 구성</h2>
+              <div id="featureSummary" class="space-y-3 text-sm text-slate-600"></div>
+            </article>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const paths = {
+        station: "/data/processed/station_summary.csv",
+        routeStations: "/data/processed/ktx_route_stations_standard.csv",
+        routeSummary: "/data/processed/route_summary.csv",
+        dFeatures: "/data/processed/d_feature_table.csv",
+        dCorrelations: "/data/processed/d_feature_correlations.csv",
+        dShap: "/data/processed/d_shap_feature_importance.csv",
+        dMetrics: "/data/processed/d_shap_model_metrics.csv",
+      };
+
+      let state = {
+        station: [],
+        routeStations: [],
+        routeSummary: [],
+        dFeatures: [],
+        dCorrelations: [],
+        dShap: [],
+        dMetrics: [],
+        stationRoute: [],
+        selectedLine: "전체",
+        topN: 15,
+        activeTab: "A",
+      };
+
+      const numberColumns = new Set([
+        "station_order",
+        "boarding_count",
+        "alighting_count",
+        "total_count",
+        "boarding_share",
+        "year",
+        "fare",
+        "passengers",
+        "service_count_weekday",
+        "service_count_weekend",
+        "spearman_corr_with_total_count",
+        "abs_corr",
+        "mean_abs_shap",
+        "mae",
+        "r2",
+        "rows",
+        "features",
+        "holiday_count",
+        "avg_temp",
+        "total_rainfall",
+        "rain_hours",
+      ]);
+
+      async function init() {
+        const [station, routeStations, routeSummary, dFeatures, dCorrelations, dShap, dMetrics] = await Promise.all([
+          loadCsv(paths.station),
+          loadCsv(paths.routeStations),
+          loadCsv(paths.routeSummary),
+          loadCsv(paths.dFeatures),
+          loadCsv(paths.dCorrelations),
+          loadCsv(paths.dShap),
+          loadCsv(paths.dMetrics),
+        ]);
+
+        const stationByName = new Map(station.map((row) => [row.station_name, row]));
+        const stationRoute = routeStations.map((row) => ({
+          ...row,
+          ...(stationByName.get(row.station_name) || {}),
+          boarding_count: Number(stationByName.get(row.station_name)?.boarding_count || 0),
+          alighting_count: Number(stationByName.get(row.station_name)?.alighting_count || 0),
+          total_count: Number(stationByName.get(row.station_name)?.total_count || 0),
+        }));
+
+        state = { ...state, station, routeStations, routeSummary, dFeatures, dCorrelations, dShap, dMetrics, stationRoute };
+        fillLineSelect();
+        bindEvents();
+        render();
+      }
+
+      async function loadCsv(path) {
+        const response = await fetch(path);
+        if (!response.ok) throw new Error(`${path} 로드 실패`);
+        return parseCsv(await response.text());
+      }
+
+      function parseCsv(text) {
+        const rows = [];
+        let row = [];
+        let cell = "";
+        let inQuotes = false;
+        const cleaned = text.replace(/^\uFEFF/, "");
+
+        for (let i = 0; i < cleaned.length; i += 1) {
+          const char = cleaned[i];
+          const next = cleaned[i + 1];
+          if (char === '"' && inQuotes && next === '"') {
+            cell += '"';
+            i += 1;
+          } else if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === "," && !inQuotes) {
+            row.push(cell);
+            cell = "";
+          } else if ((char === "\n" || char === "\r") && !inQuotes) {
+            if (char === "\r" && next === "\n") i += 1;
+            row.push(cell);
+            rows.push(row);
+            row = [];
+            cell = "";
+          } else {
+            cell += char;
+          }
+        }
+        if (cell || row.length) {
+          row.push(cell);
+          rows.push(row);
+        }
+
+        const headers = rows.shift().map((header) => header.trim());
+        return rows
+          .filter((values) => values.some((value) => value !== ""))
+          .map((values) => {
+            const item = {};
+            headers.forEach((header, index) => {
+              const value = values[index] ?? "";
+              item[header] = numberColumns.has(header) ? Number(value || 0) : value;
+            });
+            return item;
+          });
+      }
+
+      function fillLineSelect() {
+        const select = document.getElementById("lineSelect");
+        const lines = [...new Set(state.stationRoute.map((row) => row.line_name).filter(Boolean))].sort();
+        select.innerHTML = ["전체", ...lines].map((line) => `<option value="${escapeHtml(line)}">${escapeHtml(line)}</option>`).join("");
+      }
+
+      function bindEvents() {
+        document.getElementById("lineSelect").addEventListener("change", (event) => {
+          state.selectedLine = event.target.value;
+          render();
+        });
+        document.getElementById("topSelect").addEventListener("change", (event) => {
+          state.topN = Number(event.target.value);
+          render();
+        });
+        document.getElementById("downloadBtn").addEventListener("click", downloadSelectedCsv);
+        document.getElementById("tabBtnA").addEventListener("click", () => setTab("A"));
+        document.getElementById("tabBtnD").addEventListener("click", () => setTab("D"));
+      }
+
+      function setTab(tab) {
+        state.activeTab = tab;
+        document.getElementById("tabA").classList.toggle("hidden", tab !== "A");
+        document.getElementById("tabD").classList.toggle("hidden", tab !== "D");
+        document.getElementById("tabBtnA").classList.toggle("active", tab === "A");
+        document.getElementById("tabBtnD").classList.toggle("active", tab === "D");
+      }
+
+      function currentRows() {
+        if (state.selectedLine === "전체") return state.stationRoute;
+        return state.stationRoute.filter((row) => row.line_name === state.selectedLine);
+      }
+
+      function currentStations() {
+        if (state.selectedLine === "전체") return state.station;
+        const seen = new Set();
+        return currentRows()
+          .filter((row) => {
+            if (seen.has(row.station_name)) return false;
+            seen.add(row.station_name);
+            return true;
+          })
+          .sort((a, b) => b.boarding_count - a.boarding_count);
+      }
+
+      function render() {
+        const rows = currentRows();
+        const stations = currentStations();
+        renderMetrics(stations, rows);
+        renderHorizontalBars("topBoardingChart", topRows(stations, "boarding_count"), "boarding_count", "station_name", "#0ea5e9");
+        renderStackedBars("boardingAlightingChart", topRows(stations, "total_count"));
+        renderRouteCounts();
+        renderRouteSummary();
+        renderRouteOrder(rows);
+        renderTable(rows);
+        renderD();
+      }
+
+      function renderMetrics(stations, rows) {
+        const totalBoarding = sum(stations, "boarding_count");
+        const totalAlighting = sum(stations, "alighting_count");
+        const routeCount = new Set(rows.map((row) => row.line_name)).size;
+        const items = [
+          ["선택 역 수", stations.length, 70],
+          ["선택 노선 수", routeCount, 45],
+          ["선택 승차 인원", totalBoarding, gaugeValue(totalBoarding, sum(state.station, "boarding_count"))],
+          ["선택 하차 인원", totalAlighting, gaugeValue(totalAlighting, sum(state.station, "alighting_count"))],
+        ];
+        document.getElementById("metrics").innerHTML = items
+          .map(([label, value, gauge]) => `
+            <div class="gauge rounded-lg p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="font-mono text-xs uppercase tracking-[0.16em] text-slate-500">${label}</p>
+                  <p class="mt-2 text-2xl font-black tabular-nums text-slate-950">${formatNumber(value)}</p>
+                </div>
+                <div class="gauge-arc shrink-0" style="--gauge-angle:${Math.max(8, gauge * 2.7)}deg">
+                  <div class="absolute inset-0 z-10 flex items-center justify-center pt-5 text-xs font-bold text-teal-700">${Math.round(gauge)}%</div>
+                </div>
+              </div>
+            </div>
+          `)
+          .join("");
+      }
+
+      function renderHorizontalBars(targetId, rows, valueKey, labelKey, color) {
+        const maxValue = Math.max(...rows.map((row) => row[valueKey]), 1);
+        document.getElementById(targetId).innerHTML = rows
+          .map((row) => {
+            const width = (row[valueKey] / maxValue) * 100;
+            return `
+              <div class="grid grid-cols-[7rem_1fr_6rem] items-center gap-2 text-xs">
+                <div class="truncate font-semibold text-slate-700" title="${escapeHtml(row[labelKey])}">${escapeHtml(row[labelKey])}</div>
+                <div class="bar-rail h-5 rounded-sm p-[2px]">
+                  <div class="bar-fill h-full rounded-[2px]" style="width:${width}%;--bar-color:${color}"></div>
+                </div>
+                <div class="text-right font-mono tabular-nums text-slate-600">${formatNumber(row[valueKey])}</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderStackedBars(targetId, rows) {
+        const maxValue = Math.max(...rows.map((row) => row.total_count), 1);
+        document.getElementById(targetId).innerHTML = rows
+          .map((row) => {
+            const boardingWidth = (row.boarding_count / maxValue) * 100;
+            const alightingWidth = (row.alighting_count / maxValue) * 100;
+            return `
+              <div class="grid grid-cols-[7rem_1fr_6rem] items-center gap-2 text-xs">
+                <div class="truncate font-semibold text-slate-700" title="${escapeHtml(row.station_name)}">${escapeHtml(row.station_name)}</div>
+                <div class="bar-rail flex h-5 rounded-sm p-[2px]">
+                  <div class="h-full rounded-l-[2px] bg-sky-500" style="width:${boardingWidth}%"></div>
+                  <div class="h-full rounded-r-[2px] bg-amber-400" style="width:${alightingWidth}%"></div>
+                </div>
+                <div class="text-right font-mono tabular-nums text-slate-600">${formatNumber(row.total_count)}</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderRouteCounts() {
+        const rows = [...groupBy(state.stationRoute, "line_name").entries()]
+          .map(([line, values]) => ({ line_name: line, station_count: new Set(values.map((row) => row.station_name)).size }))
+          .sort((a, b) => a.station_count - b.station_count);
+        renderHorizontalBars("routeCountChart", rows, "station_count", "line_name", "#16a34a");
+      }
+
+      function renderRouteSummary() {
+        const rows = state.selectedLine === "전체"
+          ? state.routeSummary
+          : state.routeSummary.filter((row) => row.route_name === state.selectedLine);
+        if (!rows.length) {
+          document.getElementById("routeSummaryChart").innerHTML = `<p class="text-sm text-slate-500">선택 노선의 구간별 통계가 없습니다.</p>`;
+          return;
+        }
+        renderHorizontalBars("routeSummaryChart", rows, "passengers", "route_name", "#0f766e");
+      }
+
+      function renderRouteOrder(rows) {
+        const title = document.getElementById("routeOrderTitle");
+        const target = document.getElementById("routeOrderChart");
+        if (state.selectedLine === "전체") {
+          title.textContent = "정차역 순서별 승차 인원";
+          target.innerHTML = `<p class="text-sm text-slate-500">정차역 순서별 차트를 보려면 특정 노선을 선택하세요.</p>`;
+          return;
+        }
+        title.textContent = `${state.selectedLine} 정차역 순서별 승차 인원`;
+        const ordered = [...rows].sort((a, b) => a.station_order - b.station_order);
+        renderHorizontalBars("routeOrderChart", ordered, "boarding_count", "station_name", "#2563eb");
+      }
+
+      function renderTable(rows) {
+        const columns = ["line_name", "station_order", "station_name", "address", "boarding_count", "alighting_count"];
+        document.getElementById("tableHead").innerHTML = `<tr>${columns.map((column) => `<th class="px-3 py-2">${column}</th>`).join("")}</tr>`;
+        document.getElementById("tableBody").innerHTML = rows
+          .slice()
+          .sort((a, b) => `${a.line_name}`.localeCompare(`${b.line_name}`, "ko") || a.station_order - b.station_order)
+          .map((row) => `
+            <tr>
+              ${columns.map((column) => `<td class="whitespace-nowrap px-3 py-2">${formatCell(row[column])}</td>`).join("")}
+            </tr>
+          `)
+          .join("");
+      }
+
+      function renderD() {
+        renderHorizontalBars("shapChart", topRowsBy(state.dShap, "mean_abs_shap", 14).reverse(), "mean_abs_shap", "feature", "#f97316");
+        renderCorrelationChart();
+        renderModelMetrics();
+        renderFeatureSummary();
+      }
+
+      function renderCorrelationChart() {
+        const rows = topRowsBy(state.dCorrelations.filter((row) => Number.isFinite(row.abs_corr)), "abs_corr", 12).reverse();
+        const maxValue = Math.max(...rows.map((row) => row.abs_corr), 1);
+        document.getElementById("corrChart").innerHTML = rows
+          .map((row) => {
+            const width = (row.abs_corr / maxValue) * 100;
+            const color = row.spearman_corr_with_total_count >= 0 ? "#0ea5e9" : "#dc2626";
+            return `
+              <div class="grid grid-cols-[9rem_1fr_5rem] items-center gap-2 text-xs">
+                <div class="truncate font-semibold text-slate-700" title="${escapeHtml(row.feature)}">${escapeHtml(row.feature)}</div>
+                <div class="bar-rail h-5 rounded-sm p-[2px]">
+                  <div class="bar-fill h-full rounded-[2px]" style="width:${width}%;--bar-color:${color}"></div>
+                </div>
+                <div class="text-right font-mono tabular-nums text-slate-600">${Number(row.spearman_corr_with_total_count || 0).toFixed(3)}</div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderModelMetrics() {
+        document.getElementById("modelMetrics").innerHTML = state.dMetrics
+          .map((metric) => `
+            <div class="rounded border border-slate-200 bg-white p-3 shadow-sm">
+              <p class="font-mono text-xs uppercase tracking-[0.16em] text-slate-500">${escapeHtml(metric.model)}</p>
+              <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+                <div><span class="text-slate-500">MAE</span><p class="text-lg font-black text-slate-950">${formatNumber(Math.round(metric.mae || 0))}</p></div>
+                <div><span class="text-slate-500">R²</span><p class="text-lg font-black text-teal-700">${Number(metric.r2 || 0).toFixed(3)}</p></div>
+              </div>
+              <p class="mt-2 text-xs text-slate-500">rows ${formatNumber(metric.rows)} · features ${formatNumber(metric.features)}</p>
+            </div>
+          `)
+          .join("");
+      }
+
+      function renderFeatureSummary() {
+        const rows = state.dFeatures;
+        const holidayRows = rows.filter((row) => Number(row.holiday_count || 0) > 0).length;
+        const weatherRows = rows.filter((row) => row.weather_station_name).length;
+        const featureCount = rows.length ? Object.keys(rows[0]).length : 0;
+        const items = [
+          ["D feature rows", formatNumber(rows.length)],
+          ["Feature columns", formatNumber(featureCount)],
+          ["Holiday matched rows", formatNumber(holidayRows)],
+          ["Weather matched rows", formatNumber(weatherRows)],
+        ];
+        document.getElementById("featureSummary").innerHTML = items
+          .map(([label, value]) => `
+            <div class="rounded border border-slate-200 bg-white p-3 shadow-sm">
+              <p class="font-mono text-xs uppercase tracking-[0.14em] text-slate-500">${label}</p>
+              <p class="mt-1 text-2xl font-black text-teal-700">${value}</p>
+            </div>
+          `)
+          .join("");
+      }
+
+      function downloadSelectedCsv() {
+        const columns = ["line_name", "station_order", "station_name", "address", "boarding_count", "alighting_count"];
+        const lines = [columns.join(",")].concat(
+          currentRows().map((row) => columns.map((column) => csvCell(row[column])).join(","))
+        );
+        const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `ktx-a-${state.selectedLine}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function topRows(rows, key) {
+        return [...rows].sort((a, b) => b[key] - a[key]).slice(0, state.topN).reverse();
+      }
+
+      function topRowsBy(rows, key, limit) {
+        return [...rows].sort((a, b) => Number(b[key] || 0) - Number(a[key] || 0)).slice(0, limit);
+      }
+
+      function groupBy(rows, key) {
+        const result = new Map();
+        rows.forEach((row) => {
+          if (!result.has(row[key])) result.set(row[key], []);
+          result.get(row[key]).push(row);
+        });
+        return result;
+      }
+
+      function sum(rows, key) {
+        return rows.reduce((total, row) => total + Number(row[key] || 0), 0);
+      }
+
+      function gaugeValue(value, maxValue) {
+        if (!maxValue) return 0;
+        return Math.min(100, Math.max(0, (Number(value || 0) / maxValue) * 100));
+      }
+
+      function formatNumber(value) {
+        return Number(value || 0).toLocaleString("ko-KR");
+      }
+
+      function formatCell(value) {
+        return typeof value === "number" ? formatNumber(value) : escapeHtml(value ?? "");
+      }
+
+      function csvCell(value) {
+        const text = String(value ?? "");
+        return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      init().catch((error) => {
+        document.body.innerHTML = `<main class="p-6"><pre class="text-red-600">${escapeHtml(error.stack || error.message)}</pre></main>`;
+      });
+    </script>
+  </body>
+</html>

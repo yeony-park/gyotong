@@ -34,6 +34,17 @@ IMG_DIR.mkdir(parents=True, exist_ok=True)
 FESTIVAL_NAMES = {"설날", "추석", "대체공휴일"}
 
 
+def write_image_or_skip(fig, path: Path) -> None:
+    """Save Plotly image when Kaleido is available; keep data outputs otherwise."""
+    try:
+        fig.write_image(str(path))
+        print(f"✅ {path.name} 저장")
+    except ValueError as exc:
+        if "kaleido" not in str(exc).lower():
+            raise
+        print(f"⚠️  {path.name} 저장 건너뜀: kaleido 미설치")
+
+
 # ══════════════════════════════════════════════════
 # 1. 공휴일 데이터 수집
 # ══════════════════════════════════════════════════
@@ -202,11 +213,20 @@ def make_monthly_features(df_raw: pd.DataFrame) -> pd.DataFrame:
 def join_to_ktx(monthly: pd.DataFrame) -> pd.DataFrame:
     """ktx_long.csv + 공휴일 월별 변수 조인"""
     ktx = pd.read_csv(DATA_DIR / "ktx_long.csv", parse_dates=["yearmonth"])
+    holiday_feature_cols = [
+        "공휴일수",
+        "설날달",
+        "추석달",
+        "명절연휴포함",
+        "명절전달",
+        "명절후달",
+        "황금연휴포함",
+    ]
+    ktx = ktx.drop(columns=holiday_feature_cols, errors="ignore")
     merged = ktx.merge(monthly, on="yearmonth", how="left")
 
     # 혹시 남은 NaN → 0 처리
-    for col in ["공휴일수", "설날달", "추석달", "명절연휴포함",
-                "명절전달", "명절후달", "황금연휴포함"]:
+    for col in holiday_feature_cols:
         merged[col] = merged[col].fillna(0).astype(int)
 
     merged.to_csv(DATA_DIR / "ktx_long.csv", index=False)
@@ -264,8 +284,7 @@ def eda_holiday(df: pd.DataFrame) -> None:
     )
     fig.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
     fig.update_layout(height=600)
-    fig.write_image(str(IMG_DIR / "boxplot_holiday_festival.png"))
-    print("✅ boxplot_holiday_festival.png 저장")
+    write_image_or_skip(fig, IMG_DIR / "boxplot_holiday_festival.png")
 
     # ── 4-4. 명절 전/중/후 공실률 패턴 Line chart ──
     df["명절시점"] = "일반"
@@ -287,8 +306,7 @@ def eda_holiday(df: pd.DataFrame) -> None:
         labels={"공실률": "평균 공실률 (%)"},
     )
     fig2.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
-    fig2.write_image(str(IMG_DIR / "barplot_holiday_timing.png"))
-    print("✅ barplot_holiday_timing.png 저장")
+    write_image_or_skip(fig2, IMG_DIR / "barplot_holiday_timing.png")
 
     # ── 4-5. 황금연휴 효과 ──
     print("\n=== 황금연휴 포함 달 vs 일반 달 공실률 ===")
@@ -314,8 +332,7 @@ def eda_holiday(df: pd.DataFrame) -> None:
         labels={"공휴일수": "공휴일 수 (일/월)", "공실률": "평균 공실률 (%)"},
     )
     fig3.add_hline(y=0, line_dash="dash", line_color="gray", line_width=1)
-    fig3.write_image(str(IMG_DIR / "line_holiday_count.png"))
-    print("✅ line_holiday_count.png 저장")
+    write_image_or_skip(fig3, IMG_DIR / "line_holiday_count.png")
 
 
 # ══════════════════════════════════════════════════
@@ -338,6 +355,10 @@ def update_model_input() -> None:
 
     # ktx_long에서 공휴일 컬럼만 추출하여 조인
     holiday_sub = ktx_long[holiday_cols]
+    model_in = model_in.drop(
+        columns=["공휴일수", "명절연휴포함", "황금연휴포함", "명절전달", "명절후달"],
+        errors="ignore",
+    )
     model_in = model_in.merge(holiday_sub, on=["yearmonth", "노선"], how="left")
 
     # 결측 처리

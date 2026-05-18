@@ -1,0 +1,28 @@
+﻿feature,spearman_corr_with_total_count,abs_corr
+station_order,-0.48544350495073085,0.48544350495073085
+temp_x_vacation,-0.03673330915473217,0.03673330915473217
+month,0.03315015527663693,0.03315015527663693
+year,0.03105235242160156,0.03105235242160156
+is_peak_travel_month,0.013524129906952679,0.013524129906952679
+holiday_count,0.009936485503819216,0.009936485503819216
+is_vacation_month,-0.006291803866478277,0.006291803866478277
+holiday_x_vacation,-0.005337305331497154,0.005337305331497154
+station_id,,
+avg_temp,,
+min_temp,,
+max_temp,,
+total_rainfall,,
+rain_hours,,
+avg_wind_speed,,
+avg_humidity,,
+max_snow_depth,,
+observed_hours,,
+mobility_net,,
+mobility_intercity_in,,
+mobility_intercity_out,,
+시도내-시군구간전입 (건),,
+시도내-시군구간전출 (건),,
+시도내-시군구내이동 (건),,
+mobility_total_in,,
+mobility_total_out,,
+holiday_x_rainfall,,
